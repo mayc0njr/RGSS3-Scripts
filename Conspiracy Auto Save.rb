@@ -2,7 +2,7 @@
 # Conspiracy Auto Save
 #==============================================================================
 # Author : Maycon "Conspiracy"
-# Version : 0.1
+# Version : 0.2
 #==============================================================================
 
 #==============================================================================
@@ -31,6 +31,7 @@ module Auto_Save
       SceneManager.call(Scene_Save)
     else
       SceneManager.goto(Scene_AutoSave)
+      SceneManager.snapshot_without_blur
     end
   end
 end
@@ -90,6 +91,9 @@ end
 #==============================================================================
 
 module SceneManager
+  
+  @bg_bmp = nil
+  
   class << self
     alias old_goto goto
   end
@@ -108,6 +112,22 @@ module SceneManager
   def self.last_scene
     return @last_scene.class
   end
+  
+  #============================================================================
+  # ● Take a snap of the map without the blur effect.
+  #============================================================================
+  def self.snapshot_without_blur
+    @bg_bmp.dispose if @bg_bmp
+    @bg_bmp = Graphics.snap_to_bitmap
+  end
+  
+  #============================================================================
+  # ● Returns the @bg_bmp var.
+  #============================================================================
+  def self.bg_bmp
+    @bg_bmp
+  end
+  
 end
 
 #==============================================================================
@@ -116,7 +136,7 @@ end
 # Go to this Scene to (auto)save your game.
 #==============================================================================
 
-class Scene_AutoSave < Scene_Base
+class Scene_AutoSave < Scene_MenuBase
   include Auto_Save
   
   #============================================================================
@@ -145,6 +165,30 @@ class Scene_AutoSave < Scene_Base
     super
     SceneManager.goto(@last_scene)
   end
+  
+  #============================================================================
+  # ● Create a background of the map.
+  #============================================================================
+  def create_background
+    @background_sprite = Sprite.new
+    @background_sprite.bitmap = SceneManager.bg_bmp
+  end
 
 end
 
+#==============================================================================
+# Scene_AutoSave
+#------------------------------------------------------------------------------
+# Modificated to add a screenshot of the map without the blur effect
+#==============================================================================
+
+class Scene_Map < Scene_Base
+  alias old_terminate terminate
+  #============================================================================
+  # ● Snap the map with and without the blur effect.
+  #============================================================================
+  def terminate
+    SceneManager.snapshot_without_blur
+    old_terminate
+  end
+end
